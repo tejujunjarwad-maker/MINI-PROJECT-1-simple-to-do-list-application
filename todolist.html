@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<!-- saved from url=(0052)file:///C:/Users/tejas/Desktop/glowlogics/mini1.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-do list</title>
+
+  <link href="./todolist_files/css2" rel="stylesheet">
+  <link rel="stylesheet" href="./todolist_files/all.min.css">
+
+  <style>
+    * { margin:0; padding:0; }
+
+    body {
+      background: radial-gradient(rgb(36,36,97), white);
+      font-family: "Shadows Into Light", cursive;
+      min-height: 100vh;
+    }
+
+    button {
+      cursor:pointer;
+      background:#606260;
+      border:none;
+      padding:10px;
+      border-radius:5px;
+    }
+
+    /* LOGIN */
+    #loginPage {
+      width:300px;
+      margin:150px auto;
+      padding:20px;
+      text-align:center;
+      background: rgba(0,0,0,0.3);
+      border-radius:10px;
+      color:white;
+    }
+
+    #loginPage input {
+      width:90%;
+      padding:10px;
+      margin:10px 0;
+      border:none;
+      border-radius:5px;
+    }
+
+    /* APP */
+    .app {
+      width:600px;
+      margin:auto;
+      padding-top:50px;
+      color:black;
+    }
+
+    .input-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      color:white;
+      margin-bottom:20px;
+    }
+
+    .to-do-input input {
+      padding:10px;
+      border-radius:10px 0 0 10px;
+      border:none;
+      outline:none;
+    }
+
+    .to-do-input button {
+      border-radius:0 10px 10px 0;
+    }
+
+    .to-do-list {
+      display:flex;
+      flex-direction:column;
+      gap:15px;
+    }
+
+    .item {
+      background: rgba(0,0,0,0.3);
+      padding:10px;
+      border-radius:10px;
+    }
+
+    textarea {
+      width:100%;
+      background:transparent;
+      border:none;
+      color:white;
+      font-size:1.1rem;
+      resize:none;
+    }
+
+    .edit-controller i {
+      margin-left:10px;
+      cursor:pointer;
+    }
+
+    .update-controller {
+      display:none;
+      margin-top:10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" style="display: none;">
+  <h2>Login</h2>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- APP -->
+<main class="app" id="app" style="display: block;">
+  <h1>My Todo List...</h1>
+
+  <div class="input-header">
+    <h3 id="date">Thu May 07 2026</h3>
+
+    <div class="to-do-input">
+      <input type="text" id="item" placeholder="Enter a task...">
+      <button id="enter">Enter</button>
+    </div>
+  </div>
+
+  <button onclick="logout()">Logout</button>
+
+  <div class="to-do-list">
+    <div class="item">
+      <div>
+        <textarea disabled="" style="text-decoration:line-through">hi</textarea>
+        <div class="edit-controller">
+          <i class="fa-solid fa-check" onclick="toggle(0)"></i>
+          <i class="fa-solid fa-pen" onclick="edit(0)"></i>
+          <i class="fa-solid fa-trash" onclick="deleteItem(0)"></i>
+        </div>
+      </div>
+
+      <div class="update-controller" id="update-0">
+        <button onclick="saveEdit(0)">Save</button>
+        <button onclick="cancelEdit()">Cancel</button>
+      </div>
+    </div></div>
+</main>
+
+<script>
+let itemsArray = localStorage.getItem("items") ? JSON.parse(localStorage.getItem("items")) : [];
+
+const input = document.getElementById("item");
+document.getElementById("enter").addEventListener("click", create);
+
+input.addEventListener("keypress", (e)=>{
+  if(e.key === "Enter") create();
+});
+
+/* LOGIN */
+function login(){
+  let user = document.getElementById("username").value;
+  let pass = document.getElementById("password").value;
+
+  if(user==="admin" && pass==="1234"){
+    localStorage.setItem("loggedIn","true");
+    document.getElementById("loginPage").style.display="none";
+    document.getElementById("app").style.display="block";
+  } else {
+    alert("Invalid login");
+  }
+}
+
+function logout(){
+  localStorage.removeItem("loggedIn");
+  location.reload();
+}
+
+/* ADD TASK */
+function create(){
+  if(!input.value.trim()) return;
+
+  itemsArray.push({
+    text: input.value,
+    completed:false
+  });
+
+  input.value="";
+  saveLocal();
+}
+
+/* DISPLAY */
+function displayItems(){
+  let items="";
+
+  itemsArray.forEach((item,i)=>{
+    items += `
+    <div class="item">
+      <div>
+        <textarea disabled style="text-decoration:${item.completed?"line-through":"none"}">${item.text}</textarea>
+        <div class="edit-controller">
+          <i class="fa-solid fa-check" onclick="toggle(${i})"></i>
+          <i class="fa-solid fa-pen" onclick="edit(${i})"></i>
+          <i class="fa-solid fa-trash" onclick="deleteItem(${i})"></i>
+        </div>
+      </div>
+
+      <div class="update-controller" id="update-${i}">
+        <button onclick="saveEdit(${i})">Save</button>
+        <button onclick="cancelEdit()">Cancel</button>
+      </div>
+    </div>`;
+  });
+
+  document.querySelector(".to-do-list").innerHTML = items;
+}
+
+/* ACTIONS */
+function deleteItem(i){
+  itemsArray.splice(i,1);
+  saveLocal();
+}
+
+function toggle(i){
+  itemsArray[i].completed = !itemsArray[i].completed;
+  saveLocal();
+}
+
+function edit(i){
+  const textarea = document.querySelectorAll("textarea")[i];
+  textarea.disabled = false;
+  textarea.focus();
+  document.getElementById("update-"+i).style.display="block";
+}
+
+function saveEdit(i){
+  const textarea = document.querySelectorAll("textarea")[i];
+  itemsArray[i].text = textarea.value;
+  textarea.disabled = true;
+  saveLocal();
+}
+
+function cancelEdit(){
+  displayItems();
+}
+
+/* SAVE */
+function saveLocal(){
+  localStorage.setItem("items", JSON.stringify(itemsArray));
+  displayItems();
+}
+
+/* DATE */
+function displayDate(){
+  document.getElementById("date").innerText = new Date().toDateString();
+}
+
+/* LOAD */
+window.onload = ()=>{
+  displayDate();
+
+  if(localStorage.getItem("loggedIn")==="true"){
+    document.getElementById("loginPage").style.display="none";
+    document.getElementById("app").style.display="block";
+  }
+
+  displayItems();
+};
+</script>
+
+
+</body></html>
